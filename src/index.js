@@ -54,23 +54,22 @@ export async function run() {
         const hasAnyoneConnectedYet = (() => {
           let result = false;
           return async () => {
-            return (result ||=
-              !didTmateQuit() &&
-              "0" !==
-                (await execShellCommand(
-                  `${tmate} display -p '#{tmate_num_clients}'`,
-                  { quiet: true }
-                )));
-          };
-        })();
-        for (let seconds = 10 * 60; seconds > 0; ) {
-          console.log(
-            `${
-              (await hasAnyoneConnectedYet())
-                ? "Waiting for session to end"
-                : `Waiting for client to connect (at most ${seconds} more second(s))`
-            }\n${message}`
-          );
+            return result ||=
+              !didTmateQuit()
+              && '0' !== await execShellCommand(`${tmate} display -p '#{tmate_num_clients}'`, { quiet: true })
+          }
+        })()
+
+        let connectTimeoutSeconds = parseInt(core.getInput("connect-timeout-seconds"))
+        if (Number.isNaN(connectTimeoutSeconds) || connectTimeoutSeconds <= 0) {
+          connectTimeoutSeconds = 10 * 60
+        }
+
+        for (let seconds = connectTimeoutSeconds; seconds > 0;) {
+          console.log(`${await hasAnyoneConnectedYet()
+            ? 'Waiting for session to end'
+            : `Waiting for client to connect (at most ${seconds} more second(s))`
+            }\n${message}`)
 
           if (continueFileExists()) {
             core.info(
@@ -111,13 +110,9 @@ export async function run() {
           );
         } else if (distro === "arch") {
           // partial upgrades are not supported so also upgrade everything
-          await execShellCommand(
-            optionalSudoPrefix + "pacman -Syu --noconfirm xz openssh"
-          );
-        } else if (distro === "fedora") {
-          await execShellCommand(
-            optionalSudoPrefix + "dnf install -y xz openssh"
-          );
+          await execShellCommand(optionalSudoPrefix + 'pacman -Syu --noconfirm xz openssh');
+        } else if (distro === "fedora" || distro === "centos" || distro === "rhel" || distro === "almalinux") {
+          await execShellCommand(optionalSudoPrefix + 'dnf install -y xz openssh');
         } else {
           await execShellCommand(optionalSudoPrefix + "apt-get update");
           await execShellCommand(
@@ -154,7 +149,7 @@ export async function run() {
         await execShellCommand(
           `echo -e 'y\n'|ssh-keygen -q -t rsa -N "" -f ~/.ssh/id_rsa`
         );
-      } catch {}
+      } catch { }
       core.debug("Generated SSH-Key successfully");
     }
 
@@ -296,6 +291,16 @@ export async function run() {
       core.saveState("tmate", tmate);
       core.saveState("authToken", authToken);
       core.saveState("runCheckID", runCheckID);
+
+      // Set the SSH command as an output so other jobs can use it
+      core.setOutput('ssh-command', tmateSSH)
+      // Extract and set the raw SSH address (without the "ssh" prefix)
+      core.setOutput('ssh-address', tmateSSH.replace(/^ssh /, ''))
+      if (tmateWeb) {
+        core.setOutput('web-url', tmateWeb)
+      }
+
+      console.log(message)
       return;
     }
 
@@ -354,18 +359,11 @@ async function updateRunCheckPostTmateDisconnect(authToken, runCheckID) {
 }
 
 function didTmateQuit() {
-  const tmateSocketPath =
-    process.platform === "win32"
-      ? "C:/msys64/tmp/tmate.sock"
-      : "/tmp/tmate.sock";
-  return !fs.existsSync(tmateSocketPath);
+  const tmateSocketPath = process.platform === "win32" ? `${core.getInput("msys2-location") || "C:\\msys64"}/tmp/tmate.sock` : "/tmp/tmate.sock"
+  return !fs.existsSync(tmateSocketPath)
 }
 
 function continueFileExists() {
-  const continuePath =
-    process.platform === "win32" ? "C:/msys64/continue" : "/continue";
-  return (
-    fs.existsSync(continuePath) ||
-    fs.existsSync(path.join(process.env.GITHUB_WORKSPACE, "continue"))
-  );
+  const continuePath = process.platform === "win32" ? `${core.getInput("msys2-location") || "C:\\msys64"}/continue` : "/continue"
+  return fs.existsSync(continuePath) || fs.existsSync(path.join(process.env.GITHUB_WORKSPACE, "continue"))
 }

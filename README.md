@@ -26,7 +26,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup ssh session
         uses: Warpbuilds/action-debugger@v1.3
 ```
@@ -87,7 +87,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup interactive ssh session
         uses: Warpbuilds/action-debugger@v1.3
         with:
@@ -95,6 +95,60 @@ jobs:
 ```
 
 By default, this mode will wait at the end of the job for a user to connect and then to terminate the ssh session. If no user has connected within 10 minutes after the post-job step started, it will terminate the `ssh` session and quit gracefully.
+
+### Using SSH command output in other jobs
+
+When running in detached mode, the action sets the following outputs that can be used in subsequent steps or jobs:
+
+- `ssh-command`: The SSH command to connect to the session
+- `ssh-address`: The raw SSH address without the "ssh" prefix
+- `web-url`: The web URL to connect to the session (if available)
+
+Example workflow using the SSH command in another job:
+
+```yaml
+name: Debug with ActionDebugger
+on: [push]
+jobs:
+  setup-debug:
+    runs-on: ubuntu-latest
+    outputs:
+      ssh-command: ${{ steps.debugger.outputs.ssh-command }}
+      ssh-address: ${{ steps.debugger.outputs.ssh-address }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup ssh session
+      id: debugger
+      uses: Warpbuilds/action-debugger@v1.3
+      with:
+        detached: true
+        
+  use-ssh-command:
+    needs: setup-debug
+    runs-on: ubuntu-latest
+    steps:
+    - name: Display SSH command
+      run: |
+        # Send a Slack message to someone telling them they can ssh to ${{ needs.setup-debug.outputs.ssh-address }}
+```
+
+## Without sudo
+
+By default we run installation commands using sudo on Linux. If you get `sudo: not found` you can use the parameter below to execute the commands directly.
+
+```yaml
+name: CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup ssh session
+      uses: Warpbuilds/action-debugger@v1.3
+      with:
+        sudo: false
+```
 
 ## Timeout
 
@@ -107,7 +161,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup interactive ssh session
         uses: Warpbuilds/action-debugger@v1.3
         timeout-minutes: 15
@@ -117,6 +171,9 @@ jobs:
 
 By default a failed step will cause all following steps to be skipped. You can specify that the ssh session only starts if a previous step [failed](https://docs.github.com/en/actions/learn-github-actions/expressions#failure).
 
+<!--
+{% raw %}
+-->
 ```yaml
 name: CI
 on: [push]
@@ -124,11 +181,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup interactive ssh session
         if: ${{ failure() }}
         uses: Warpbuilds/action-debugger@v1.3
 ```
+<!--
+{% endraw %}
+-->
 
 ## Use registered public SSH key(s)
 
@@ -141,7 +201,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup interactive ssh session
         uses: Warpbuilds/action-debugger@v1.3
         with:
@@ -150,9 +210,64 @@ jobs:
 
 If the registered public SSH key is not your default private SSH key, you will need to specify the path manually, like so: `ssh -i <path-to-key> <ssh-connection-string>`.
 
+## Use your own tmate servers
+
+By default the session uses `gha.warp.build`. You can use your own tmate servers. [tmate-ssh-server](https://github.com/tmate-io/tmate-ssh-server) is the server side part of tmate.
+
+```yaml
+name: CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup ssh session
+      uses: Warpbuilds/action-debugger@v1.3
+      with:
+        tmate-server-host: ssh.tmate.io
+        tmate-server-port: 22
+        tmate-server-rsa-fingerprint: SHA256:Hthk2T/M/Ivqfk1YYUn5ijC2Att3+UPzD7Rn72P5VWs
+        tmate-server-ed25519-fingerprint: SHA256:jfttvoypkHiQYUqUCwKeqd9d1fJj/ZiQlFOHVl6E9sI
+```
+
+## Skip installing tmate
+
+By default, tmate and its dependencies are installed in a platform-dependent manner. When using self-hosted agents, this can become unnecessary or can even break. You can skip installing tmate and its dependencies using `install-dependencies`:
+
+```yaml
+name: CI
+on: [push]
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+    steps:
+    - uses: Warpbuilds/action-debugger@v1.3
+      with:
+        install-dependencies: false
+```
+
+## Use a different MSYS2 location
+
+If you want to integrate with the msys2/setup-msys2 action or otherwise don't have an MSYS2 installation at `C:\msys64`, you can specify a different location for MSYS2:
+
+```yaml
+name: CI
+on: [push]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: msys2/setup-msys2@v2
+      id: setup-msys2
+    - uses: Warpbuilds/action-debugger@v1.3
+      with:
+        msys2-location: ${{ steps.setup-msys2.outputs.msys2-location }}
+```
+
 ## Continue a workflow
 
-If you want to continue a workflow and you are inside an ssh session, just create a empty file with the name `continue` either in the root directory or in the project directory by running `touch continue` or `sudo touch /continue`.
+If you want to continue a workflow and you are inside a ssh session, just create a empty file with the name `continue` either in the root directory or in the project directory by running `touch continue` or `sudo touch /continue` (on Linux).
 
 ## Attribution
 
