@@ -1,52 +1,53 @@
-name: 'Debugging with tmate'
-description: 'Debug your GitHub Actions Environment interactively by using SSH or a Web shell'
+name: "ActionDebugger By WarpBuild"
+description: "Debug your GitHub Actions Environment interactively by using SSH or a Web shell"
 branding:
   icon: terminal
-author: 'Max Schmitt'
+  color: gray-dark
+author: "WarpBuild"
 runs:
-  using: 'node20'
-  main: '../lib/index.js'
-  post: '../lib/index.js'
-  post-if: '!cancelled()'
+  using: "node20"
+  main: "../lib/index.js"
+  post: "../lib/index.js"
+  post-if: "!cancelled()"
 inputs:
   sudo:
-    description: 'If apt should be executed with sudo or without'
+    description: "If apt should be executed with sudo or without"
     required: false
-    default: 'auto'
+    default: "auto"
   install-dependencies:
-    description: 'Whether or not to install dependencies for tmate on linux (openssh-client, xz-utils)'
+    description: "Whether or not to install dependencies on linux (openssh-client, xz-utils)"
     required: false
-    default: 'true'
+    default: "true"
   limit-access-to-actor:
-    description: 'Whether to authorize only the public SSH keys of the user triggering the workflow (defaults to true if the GitHub profile of the user has a public SSH key)'
+    description: "Whether to authorize only the public SSH keys of the user triggering the workflow (defaults to true if the GitHub profile of the user has a public SSH key)"
     required: false
-    default: 'auto'
+    default: "auto"
   detached:
-    description: 'In detached mode, the workflow job will continue while the tmate session is active'
+    description: "In detached mode, the workflow job will continue while the ssh session is active"
     required: false
-    default: 'true'
+    default: "true"
   connect-timeout-seconds:
-    description: 'How long in seconds to wait for a connection to be established'
+    description: "How long in seconds to wait for a connection to be established"
     required: false
-    default: '600'
+    default: "600"
   tmate-server-host:
-    description: 'The hostname for your tmate server (e.g. ssh.example.org)'
+    description: "The hostname for your tmate server (e.g. ssh.example.org)"
     required: false
-    default: ''
+    default: "gha.warp.build"
   tmate-server-port:
-    description: 'The port for your tmate server (e.g. 2222)'
+    description: "The port for your tmate server (e.g. 2222)"
     required: false
-    default: ''
+    default: ""
   tmate-server-rsa-fingerprint:
-    description: 'The RSA fingerprint for your tmate server'
+    description: "The RSA fingerprint for your tmate server"
     required: false
-    default: ''
+    default: "SHA256:xx8GG3NVyIlZRFvm+a0N8U3NVXCIZXMsOnes0ERRz1k"
   tmate-server-ed25519-fingerprint:
-    description: 'The ed25519 fingerprint for your tmate server'
+    description: "The ed25519 fingerprint for your tmate server"
     required: false
-    default: ''
+    default: "SHA256:+aWjAPAeKuvuZSPG92Q8yaEkd5eb2T+uF9Jp+8Sb/+A"
   msys2-location:
-    description: 'The root of the MSYS2 installation (on Windows runners)'
+    description: "The root of the MSYS2 installation (on Windows runners)"
     required: false
     default: 'C:\msys64'
   github-token:
@@ -56,11 +57,19 @@ inputs:
       Also when generating a new PAT, select the least scopes necessary.
       [Learn more about creating and using encrypted secrets](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
     default: ${{ github.token }}
+  named-session-name:
+    description: "If populated, the session will be generated with a deterministic URL in the format of <username>/<named-sesison-name>@gha.warp.build"
+    required: false
+    default: ""
+  named-session-api-key:
+    description: "API Key required to create named session. Please contact support@warpbuilds.com to get one."
+    required: false
+    default: ""
 
 outputs:
   ssh-command:
-    description: 'The SSH command to connect to the tmate session (only set when detached mode is enabled)'
+    description: "The SSH command to connect to the tmate session (only set when detached mode is enabled)"
   ssh-address:
     description: 'The raw SSH address without the "ssh" prefix (only set when detached mode is enabled)'
   web-url:
-    description: 'The web URL to connect to the tmate session (only set when detached mode is enabled and web URL is available)'
+    description: "The web URL to connect to the tmate session (only set when detached mode is enabled and web URL is available)"
