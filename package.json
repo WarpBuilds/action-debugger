@@ -28,7 +28,7 @@
     "@octokit/rest": "^20.1.2"
   },
   "overrides": {
-    "undici": "^6.24.0"
+    "undici": "^6.28.0"
   },
   "devDependencies": {
     "@babel/core": "^7.22.11",
