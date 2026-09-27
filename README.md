@@ -50,7 +50,7 @@ on:
       debug_enabled:
         type: boolean
         required: false
-        default: false
+        default: 'false'
 ```
 
 Then add an [`if`](https://docs.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions) condition to the debug step:
