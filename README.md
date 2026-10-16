@@ -269,6 +269,56 @@ jobs:
 
 If you want to continue a workflow and you are inside a ssh session, just create a empty file with the name `continue` either in the root directory or in the project directory by running `touch continue` or `sudo touch /continue` (on Linux).
 
+## Watching a GUI session (browser / e2e tests)
+
+`ssh -X` and `ssh -Y` will not forward a display from the runner, and this is not something the action can add: the SSH command you are given connects to a **tmate relay** (`gha.warp.build` by default), not to an `sshd` running on the runner. tmate carries the terminal only and does not implement the SSH X11 channel, so there is nothing on the far end for X11 forwarding to attach to.
+
+What does work is to run the GUI on a virtual display, serve that display over VNC on the runner, and expose it to your browser through noVNC. Start the display and VNC server **before** the debugger step, and run the debugger in `detached` mode so the session is open while your tests execute:
+
+```yaml
+name: CI
+on: [push]
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: ":99"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start a virtual display and a VNC server for it
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb x11vnc novnc websockify
+          Xvfb :99 -screen 0 1280x800x24 &
+          sleep 1
+          x11vnc -display :99 -localhost -nopw -forever -shared -viewonly -bg
+          websockify --daemon --web=/usr/share/novnc 6080 localhost:5900
+      - name: Setup interactive ssh session
+        uses: Warpbuilds/action-debugger@v1.3
+        with:
+          detached: true
+      - name: Run e2e tests
+        run: npx playwright test --headed   # or whatever drives your GUI
+```
+
+Connect to the session as usual, then expose port `6080` from inside it. The quickest way needs no account:
+
+```sh
+curl -sSL -o /tmp/cloudflared https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+chmod +x /tmp/cloudflared
+/tmp/cloudflared tunnel --url http://localhost:6080 --no-autoupdate
+```
+
+Open the printed `https://<random>.trycloudflare.com/vnc.html` and click **Connect** — you are now watching the runner's display live.
+
+If you would rather not go through a third party, reverse-tunnel from inside the session to a host you control instead, then open `http://localhost:6080/vnc.html` there:
+
+```sh
+ssh -R 6080:localhost:6080 you@your-host
+```
+
+A note on exposure: `x11vnc -localhost` binds VNC to the loopback interface, so the tunnel URL is the only way in. That URL is unguessable but unauthenticated — anyone who has it can watch the display, and can control it unless `-viewonly` is set. For anything sensitive, add `-passwd` to `x11vnc` or use the SSH variant, and stop the tunnel with `Ctrl-C` when you are done.
+
 ## Attribution
 
 This action is built on top of the great work done by [tmate](https://github.com/mxschmitt/action-tmate)
