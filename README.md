@@ -192,7 +192,9 @@ jobs:
 
 ## Use registered public SSH key(s)
 
-If [you have registered one or more public SSH keys with your GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account), ssh will be started such that only those keys are authorized to connect, otherwise anybody can connect to the ssh session. If you want to require a public SSH key to be installed with the ssh session, no matter whether the user who started the workflow has registered any in their GitHub profile, you will need to configure the setting `limit-access-to-actor` to `true`, like so:
+By default, only the public SSH keys [registered with the GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account) of the user who started the workflow can connect. If that user has no public SSH key, the session does not start and the step fails.
+
+To allow anyone with the session address to connect, set `limit-access-to-actor` to `false`. Do not do this on a public repository, because anyone who can read the job log can then open a shell on the runner.
 
 ```yaml
 name: CI
@@ -205,7 +207,7 @@ jobs:
       - name: Setup interactive ssh session
         uses: Warpbuilds/action-debugger@v1.3
         with:
-          limit-access-to-actor: true
+          limit-access-to-actor: false
 ```
 
 If the registered public SSH key is not your default private SSH key, you will need to specify the path manually, like so: `ssh -i <path-to-key> <ssh-connection-string>`.
