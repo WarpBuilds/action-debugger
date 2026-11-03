@@ -31,7 +31,7 @@ jobs:
         uses: Warpbuilds/action-debugger@v1.3
 ```
 
-To get the connection string, just open the `Checks` tab in your Pull Request or Run and scroll to the bottom. There you can connect either directly per SSH or via a web based terminal. The connection string is also logged inside workflow logs.
+To get the connection string, just open the `Checks` tab in your Pull Request or Run and scroll to the bottom. There you can connect directly per SSH, or via a web based terminal when `limit-access-to-actor` is `false`. The connection string is also logged inside workflow logs.
 
 ![screenshots](https://github.com/WarpBuilds/action-debugger/assets/9110203/2e1ce772-285f-4a4e-a41a-d12054d8960e)
 ![check](https://github.com/WarpBuilds/action-debugger/assets/9110203/d8cb31ef-5044-4f39-a391-a198ec09ce39)
@@ -192,9 +192,9 @@ jobs:
 
 ## Use registered public SSH key(s)
 
-By default, only the public SSH keys [registered with the GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account) of the user who started the workflow can connect. If that user has no public SSH key, the session does not start and the step fails.
+By default, only the user who started the workflow can connect, using the public SSH keys [registered with their GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account). If that user has no public SSH key, the step fails and no session starts. The web shell is also turned off.
 
-To allow anyone with the session address to connect, set `limit-access-to-actor` to `false`. Do not do this on a public repository, because anyone who can read the job log can then open a shell on the runner.
+To allow anyone with the connection string to connect, set `limit-access-to-actor` to `false`. Do not do this on a public repository, because anyone who can read the job log can then open a shell on the runner.
 
 ```yaml
 name: CI
