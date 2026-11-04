@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
 ```
 
 To get the connection string, just open the `Checks` tab in your Pull Request or Run and scroll to the bottom. There you can connect directly per SSH, or via a web based terminal when `limit-access-to-actor` is `false`. The connection string is also logged inside workflow logs.
@@ -66,7 +66,7 @@ jobs:
     steps:
       # Enable ssh debugging of manually-triggered workflows if the input option was provided
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 ```
 
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         with:
           detached: true
 ```
@@ -119,7 +119,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Setup ssh session
       id: debugger
-      uses: Warpbuilds/action-debugger@v1.3
+      uses: Warpbuilds/action-debugger@v2
       with:
         detached: true
         
@@ -145,7 +145,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup ssh session
-      uses: Warpbuilds/action-debugger@v1.3
+      uses: Warpbuilds/action-debugger@v2
       with:
         sudo: false
 ```
@@ -163,7 +163,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         timeout-minutes: 15
 ```
 
@@ -184,7 +184,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
         if: ${{ failure() }}
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
 ```
 <!--
 {% endraw %}
@@ -205,7 +205,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         with:
           limit-access-to-actor: false
 ```
@@ -225,7 +225,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup ssh session
-      uses: Warpbuilds/action-debugger@v1.3
+      uses: Warpbuilds/action-debugger@v2
       with:
         tmate-server-host: ssh.tmate.io
         tmate-server-port: 22
@@ -244,7 +244,7 @@ jobs:
   build:
     runs-on: [self-hosted, linux]
     steps:
-    - uses: Warpbuilds/action-debugger@v1.3
+    - uses: Warpbuilds/action-debugger@v2
       with:
         install-dependencies: false
 ```
@@ -262,7 +262,7 @@ jobs:
     steps:
     - uses: msys2/setup-msys2@v2
       id: setup-msys2
-    - uses: Warpbuilds/action-debugger@v1.3
+    - uses: Warpbuilds/action-debugger@v2
       with:
         msys2-location: ${{ steps.setup-msys2.outputs.msys2-location }}
 ```
