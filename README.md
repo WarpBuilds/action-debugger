@@ -28,10 +28,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
 ```
 
-To get the connection string, just open the `Checks` tab in your Pull Request or Run and scroll to the bottom. There you can connect either directly per SSH or via a web based terminal. The connection string is also logged inside workflow logs.
+To get the connection string, just open the `Checks` tab in your Pull Request or Run and scroll to the bottom. There you can connect directly per SSH, or via a web based terminal when `limit-access-to-actor` is `false`. The connection string is also logged inside workflow logs.
 
 ![screenshots](https://github.com/WarpBuilds/action-debugger/assets/9110203/2e1ce772-285f-4a4e-a41a-d12054d8960e)
 ![check](https://github.com/WarpBuilds/action-debugger/assets/9110203/d8cb31ef-5044-4f39-a391-a198ec09ce39)
@@ -66,7 +66,7 @@ jobs:
     steps:
       # Enable ssh debugging of manually-triggered workflows if the input option was provided
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 ```
 
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         with:
           detached: true
 ```
@@ -119,7 +119,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Setup ssh session
       id: debugger
-      uses: Warpbuilds/action-debugger@v1.3
+      uses: Warpbuilds/action-debugger@v2
       with:
         detached: true
         
@@ -145,7 +145,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup ssh session
-      uses: Warpbuilds/action-debugger@v1.3
+      uses: Warpbuilds/action-debugger@v2
       with:
         sudo: false
 ```
@@ -163,7 +163,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         timeout-minutes: 15
 ```
 
@@ -184,7 +184,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
         if: ${{ failure() }}
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
 ```
 <!--
 {% endraw %}
@@ -192,7 +192,9 @@ jobs:
 
 ## Use registered public SSH key(s)
 
-If [you have registered one or more public SSH keys with your GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account), ssh will be started such that only those keys are authorized to connect, otherwise anybody can connect to the ssh session. If you want to require a public SSH key to be installed with the ssh session, no matter whether the user who started the workflow has registered any in their GitHub profile, you will need to configure the setting `limit-access-to-actor` to `true`, like so:
+By default, only the user who started the workflow can connect, using the public SSH keys [registered with their GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account). If that user has no public SSH key, the step fails and no session starts. The web shell is also turned off.
+
+To allow anyone with the connection string to connect, set `limit-access-to-actor` to `false`. Do not do this on a public repository, because anyone who can read the job log can then open a shell on the runner.
 
 ```yaml
 name: CI
@@ -203,9 +205,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         with:
-          limit-access-to-actor: true
+          limit-access-to-actor: false
 ```
 
 If the registered public SSH key is not your default private SSH key, you will need to specify the path manually, like so: `ssh -i <path-to-key> <ssh-connection-string>`.
@@ -223,7 +225,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Setup ssh session
-      uses: Warpbuilds/action-debugger@v1.3
+      uses: Warpbuilds/action-debugger@v2
       with:
         tmate-server-host: ssh.tmate.io
         tmate-server-port: 22
@@ -242,7 +244,7 @@ jobs:
   build:
     runs-on: [self-hosted, linux]
     steps:
-    - uses: Warpbuilds/action-debugger@v1.3
+    - uses: Warpbuilds/action-debugger@v2
       with:
         install-dependencies: false
 ```
@@ -260,7 +262,7 @@ jobs:
     steps:
     - uses: msys2/setup-msys2@v2
       id: setup-msys2
-    - uses: Warpbuilds/action-debugger@v1.3
+    - uses: Warpbuilds/action-debugger@v2
       with:
         msys2-location: ${{ steps.setup-msys2.outputs.msys2-location }}
 ```
