@@ -1,9 +1,6 @@
 import * as core from "@actions/core"
-import { run } from "./index"
 
-if (!core.getState("deprecationWarned")) {
-  core.saveState("deprecationWarned", "true")
-  core.warning("Warpbuilds/action-debugger@v1.3 is deprecated. Change it to Warpbuilds/action-debugger@v2.")
+if (!core.getState("deprecationShown")) {
+  core.saveState("deprecationShown", "true")
+  core.setFailed("Warpbuilds/action-debugger@v1.3 is deprecated and no longer works. Change it to Warpbuilds/action-debugger@v2. v2 needs an SSH key on your GitHub account: https://github.com/settings/keys")
 }
-
-run()
