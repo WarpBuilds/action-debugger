@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
 ```
 
 To get the connection string, just open the `Checks` tab in your Pull Request or Run and scroll to the bottom. There you can connect either directly per SSH or via a web based terminal. The connection string is also logged inside workflow logs.
@@ -66,7 +66,7 @@ jobs:
     steps:
       # Enable ssh debugging of manually-triggered workflows if the input option was provided
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 ```
 
@@ -89,7 +89,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         with:
           detached: true
 ```
@@ -109,7 +109,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         timeout-minutes: 15
 ```
 
@@ -127,12 +127,14 @@ jobs:
       - uses: actions/checkout@v3
       - name: Setup interactive ssh session
         if: ${{ failure() }}
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
 ```
 
-## Use registered public SSH key(s)
+## Who can connect
 
-If [you have registered one or more public SSH keys with your GitHub profile](https://docs.github.com/en/github/authenticating-to-github/adding-a-new-ssh-key-to-your-github-account), ssh will be started such that only those keys are authorized to connect, otherwise anybody can connect to the ssh session. If you want to require a public SSH key to be installed with the ssh session, no matter whether the user who started the workflow has registered any in their GitHub profile, you will need to configure the setting `limit-access-to-actor` to `true`, like so:
+Only the user who started the workflow can connect, using the [public SSH keys on their GitHub account](https://github.com/settings/keys). If they have no key, the step fails.
+
+To let anyone with the session address connect, set `limit-access-to-actor` to `false`:
 
 ```yaml
 name: CI
@@ -143,9 +145,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup interactive ssh session
-        uses: Warpbuilds/action-debugger@v1.3
+        uses: Warpbuilds/action-debugger@v2
         with:
-          limit-access-to-actor: true
+          limit-access-to-actor: false
 ```
 
 If the registered public SSH key is not your default private SSH key, you will need to specify the path manually, like so: `ssh -i <path-to-key> <ssh-connection-string>`.

@@ -19,9 +19,9 @@ inputs:
     required: false
     default: "true"
   limit-access-to-actor:
-    description: "Whether to authorize only the public SSH keys of the user triggering the workflow (defaults to true if the GitHub profile of the user has a public SSH key)"
+    description: "Whether to authorize only the public SSH keys of the user triggering the workflow. The session fails to start if the user has no public SSH key. Set to false to allow anyone with the session address to connect."
     required: false
-    default: "auto"
+    default: "true"
   detached:
     description: "In detached mode, the workflow job will continue while the ssh session is active"
     required: false

@@ -160,9 +160,8 @@ export async function run() {
 
     let newSessionExtra = "";
     let tmateSSHDashI = "";
-    let publicSSHKeysWarning = "";
     const limitAccessToActor = core.getInput("limit-access-to-actor");
-    if (limitAccessToActor === "true" || limitAccessToActor === "auto") {
+    if (limitAccessToActor !== "false") {
       const { actor, apiUrl } = github.context;
       const auth = core.getInput("github-token");
       const octokit = new Octokit({
@@ -174,12 +173,9 @@ export async function run() {
         username: actor,
       });
       if (keys.data.length === 0) {
-        if (limitAccessToActor === "auto")
-          publicSSHKeysWarning = `No public SSH keys found for ${actor}; continuing without them even if it is less secure (please consider adding an SSH key, see https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account)`;
-        else
-          throw new Error(
-            `No public SSH keys registered with ${actor}'s GitHub profile`
-          );
+        throw new Error(
+          `No public SSH keys registered with ${actor}'s GitHub profile. Add one at https://github.com/settings/keys, or set limit-access-to-actor: false to allow anyone with the session address to connect.`
+        );
       } else {
         const sshPath = path.join(os.homedir(), ".ssh");
         await fs.promises.mkdir(sshPath, { recursive: true });
@@ -282,9 +278,6 @@ export async function run() {
       core.debug("Entering detached mode");
 
       let message = "";
-      if (publicSSHKeysWarning) {
-        message += `::warning::${publicSSHKeysWarning}\n`;
-      }
       if (tmateWeb) {
         message += `::notice::Web shell: ${tmateWeb}\n`;
       }
@@ -301,9 +294,6 @@ export async function run() {
 
     core.debug("Entering main loop");
     while (true) {
-      if (publicSSHKeysWarning) {
-        core.warning(publicSSHKeysWarning);
-      }
       if (tmateWeb) {
         core.info(`Web shell: ${tmateWeb}`);
       }

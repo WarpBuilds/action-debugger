@@ -14,6 +14,16 @@ jest.mock("@actions/github", () => {
     },
   };
 });
+const mockListPublicKeysForUser = jest.fn(async () => ({
+  data: [{ key: "ssh-ed25519 AAAA test-user" }],
+}));
+jest.mock("@octokit/rest", () => ({
+  Octokit: class {
+    users = {
+      listPublicKeysForUser: mockListPublicKeysForUser,
+    };
+  },
+}));
 jest.mock("@actions/tool-cache", () => ({
   downloadTool: async () => "",
   extractTar: async () => "",
@@ -81,7 +91,7 @@ describe("Tmate GitHub integration", () => {
     Object.defineProperty(process, "platform", {
       value: "win32",
     });
-    core.getInput.mockReturnValueOnce("false");
+    core.getInput.mockReturnValueOnce("false").mockReturnValueOnce("false");
     const customConnectionString = "foobar";
     execShellCommand.mockReturnValue(Promise.resolve(customConnectionString));
     await run();
@@ -252,5 +262,40 @@ describe("Tmate GitHub integration", () => {
     expect(core.setFailed).toHaveBeenCalledWith(
       Error("Invalid value for 'tmate-server-host': 'not/a/valid/hostname'")
     );
+  });
+  it("should authorize only the actor's public SSH keys by default", async () => {
+    core.getInput.mockReturnValue("");
+
+    await run();
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(execShellCommand).toHaveBeenCalledWith(
+      expect.stringContaining('-a "')
+    );
+  });
+  it("should fail when the actor has no public SSH keys", async () => {
+    core.getInput.mockReturnValue("");
+    mockListPublicKeysForUser.mockResolvedValueOnce({ data: [] });
+
+    await run();
+
+    expect(core.setFailed).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("No public SSH keys registered with"),
+      })
+    );
+    expect(execShellCommand).not.toHaveBeenCalledWith(
+      expect.stringContaining("new-session")
+    );
+  });
+  it("should allow anyone to connect when limit-access-to-actor is false", async () => {
+    core.getInput.mockImplementation((name) =>
+      name === "limit-access-to-actor" ? "false" : ""
+    );
+
+    await run();
+
+    expect(core.setFailed).not.toHaveBeenCalled();
+    expect(mockListPublicKeysForUser).not.toHaveBeenCalled();
   });
 });
